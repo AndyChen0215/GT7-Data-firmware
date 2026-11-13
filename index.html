@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GT7 Dash 線上燒錄</title>
+<meta name="description" content="用瀏覽器透過 USB 安裝或更新 GT7 Dash 儀表韌體。">
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1b1f24;
+    --muted: #5d6673;
+    --line: #dde1e6;
+    --accent: #e8590c;
+    --accent-text: #ffffff;
+    --beta: #6741d9;
+    --warn-bg: #fff4e5;
+    --warn-line: #f0b46b;
+    --ok: #2b8a3e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418;
+      --card: #1a1f25;
+      --text: #e9ecef;
+      --muted: #9aa4b1;
+      --line: #2c333b;
+      --accent: #ff7a2f;
+      --accent-text: #111418;
+      --beta: #9775fa;
+      --warn-bg: #2b2114;
+      --warn-line: #8a5a1c;
+      --ok: #51cf66;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    /* ESP Web Tools dialog colours */
+    --mdc-theme-primary: var(--accent);
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 0 0 6px; }
+  h2 { font-size: 19px; margin: 36px 0 12px; }
+  p { margin: 0 0 12px; }
+  .lead { color: var(--muted); margin-bottom: 24px; }
+  .notice {
+    border: 1px solid var(--warn-line);
+    background: var(--warn-bg);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 0 0 20px;
+  }
+  .notice[hidden] { display: none; }
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card[hidden] { display: none; }
+  .tag {
+    align-self: flex-start;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 1px 10px;
+    border-radius: 99px;
+    color: var(--accent);
+    border: 1px solid currentColor;
+  }
+  .card.beta .tag { color: var(--beta); }
+  .version { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .meta { color: var(--muted); font-size: 14px; min-height: 1.6em; }
+  .card esp-web-install-button { margin-top: 8px; }
+  button.install {
+    width: 100%;
+    border: 0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .card.beta button.install { background: var(--beta); }
+  button.install:disabled { opacity: .5; cursor: default; }
+  .slot-msg { color: var(--muted); font-size: 14px; }
+  ol, ul { padding-left: 1.4em; margin: 0 0 12px; }
+  li { margin-bottom: 6px; }
+  code, kbd {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: .92em;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 0 5px;
+  }
+  details {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 10px;
+  }
+  summary { cursor: pointer; font-weight: 600; }
+  details p, details ul { margin-top: 8px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 14px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>GT7 Dash 線上燒錄</h1>
+  <p class="lead">用 USB 線把儀表接上電腦，直接在這個網頁安裝或更新韌體，不需要安裝 Arduino IDE。原本的 Wi-Fi 和各項設定都會保留。</p>
+
+  <div class="notice" id="no-serial" hidden>
+    這個瀏覽器不支援 USB 燒錄。請改用電腦版的 <b>Chrome</b>、<b>Edge</b> 或 <b>Opera</b>。Safari、Firefox 和手機都不能使用。
+  </div>
+
+  <div class="cards">
+    <section class="card" id="stable">
+      <span class="tag">穩定版</span>
+      <div class="version" data-field="version">讀取中…</div>
+      <div class="meta" data-field="meta"></div>
+      <esp-web-install-button manifest="stable/webflash.json">
+        <button class="install" slot="activate">安裝穩定版</button>
+        <span class="slot-msg" slot="unsupported">這個瀏覽器不支援，請用電腦版 Chrome 或 Edge。</span>
+        <span class="slot-msg" slot="not-allowed">網頁必須透過 https 開啟才能燒錄。</span>
+      </esp-web-install-button>
+    </section>
+
+    <section class="card beta" id="beta" hidden>
+      <span class="tag">測試版</span>
+      <div class="version" data-field="version"></div>
+      <div class="meta" data-field="meta"></div>
+      <esp-web-install-button manifest="beta/webflash.json">
+        <button class="install" slot="activate">安裝測試版</button>
+        <span class="slot-msg" slot="unsupported">這個瀏覽器不支援，請用電腦版 Chrome 或 Edge。</span>
+        <span class="slot-msg" slot="not-allowed">網頁必須透過 https 開啟才能燒錄。</span>
+      </esp-web-install-button>
+    </section>
+  </div>
+
+  <h2>安裝步驟</h2>
+  <ol>
+    <li>用可以傳資料的 USB 線把儀表接上電腦（只能充電的線不行）。</li>
+    <li>按上面的「安裝」，瀏覽器會列出序列埠。選 <code>USB JTAG/serial debug unit</code> 或 <code>USB-Enhanced-SERIAL CH343</code> 開頭的那一個，再按「連線」。</li>
+    <li>出現英文視窗後按 <b>Install GT7 Dash</b>。</li>
+    <li>接著會問 <b>Erase device</b>。<b>不要勾選</b>，直接按 <b>Next</b>，設定就會保留。</li>
+    <li>按 <b>Install</b> 開始燒錄，大約一分鐘。過程中不要拔線。</li>
+    <li>看到 <b>Installation complete!</b> 就完成了。如果儀表沒有自己重新開機，按一下板子上的 <kbd>RESET</kbd>。</li>
+  </ol>
+  <p>之後的更新可以直接在儀表選單的韌體頁面檢查更新，不一定要再接電腦。</p>
+
+  <h2>常見問題</h2>
+  <details>
+    <summary>勾選 Erase device 會怎樣？</summary>
+    <p>整片記憶體會先清空，等於恢復成全新的狀態：</p>
+    <ul>
+      <li>Wi-Fi 設定、目標主機、儀表樣式等所有設定都會消失，開機後要重新用手機設定 Wi-Fi。</li>
+      <li>Wi-Fi 設定熱點的密碼會重新產生，之前拍下或印出來的 QR 碼就不能用了。</li>
+      <li>自訂的機器名稱也會清掉。</li>
+    </ul>
+    <p>只有在儀表怪怪的、重灌也沒用時才需要勾。</p>
+  </details>
+  <details>
+    <summary>列表裡找不到序列埠</summary>
+    <ul>
+      <li>換一條 USB 線，或換到板子上的另一個 USB 孔。</li>
+      <li>如果板子是接 CH343 那個孔，Windows 可能要先安裝 WCH 的 CH343 驅動程式。</li>
+      <li>關掉 Arduino IDE 的序列埠監控視窗或其他正在用這個序列埠的程式。</li>
+    </ul>
+  </details>
+  <details>
+    <summary>一直停在連線中，或出現 Failed to initialize</summary>
+    <p>手動讓板子進入燒錄模式：按住 <kbd>BOOT</kbd> 不放，按一下 <kbd>RESET</kbd>，再放開 <kbd>BOOT</kbd>。然後重新按「安裝」。燒完後要再按一次 <kbd>RESET</kbd> 才會開機。</p>
+  </details>
+  <details>
+    <summary>穩定版和測試版有什麼不同？</summary>
+    <p>測試版是還在試用的新功能，可能有問題。裝了測試版之後，儀表會從測試版頻道檢查更新；等下一個穩定版推出，就會自動回到穩定版。這裡只在測試版比穩定版新的時候才會出現測試版。</p>
+  </details>
+  <details>
+    <summary>從測試版改回穩定版</summary>
+    <p>直接在這裡按「安裝穩定版」即可，設定會保留。</p>
+  </details>
+
+  <footer>燒錄工具使用 <a href="https://esphome.github.io/esp-web-tools/" rel="noopener">ESP Web Tools</a>。韌體版本記錄請看 <a href="https://github.com/AndyChen0215/GT7-Data-firmware/releases" rel="noopener">GitHub Releases</a>。</footer>
+</main>
+
+<script>
+  // Same order as OtaUpdater::isNewer and the release workflow.
+  function versionKey(version) {
+    const [core, ...rest] = version.split("-");
+    const pre = rest.join("-");
+    const numbers = core.split(".").map(Number);
+    const tail = pre
+      ? [0, ...pre.split(".").map(p => /^\d+$/.test(p) ? [0, Number(p), ""] : [1, 0, p])]
+      : [1];
+    return [numbers, tail];
+  }
+  function compare(a, b) {
+    if (Array.isArray(a) && Array.isArray(b)) {
+      for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        const c = compare(a[i], b[i]);
+        if (c) return c;
+      }
+      return a.length - b.length;
+    }
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+  const isNewer = (a, b) => compare(versionKey(a), versionKey(b)) > 0;
+
+  async function loadInfo(slot) {
+    try {
+      const response = await fetch(`${slot}/info.json`, { cache: "no-store" });
+      return response.ok ? await response.json() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function fill(card, info) {
+    card.querySelector('[data-field="version"]').textContent = "v" + info.version;
+    const meta = [info.date, info.notes].filter(Boolean).join(" · ");
+    card.querySelector('[data-field="meta"]').textContent = meta;
+  }
+
+  if (!("serial" in navigator)) {
+    document.getElementById("no-serial").hidden = false;
+  }
+
+  (async () => {
+    const [stable, beta] = await Promise.all([loadInfo("stable"), loadInfo("beta")]);
+    const stableCard = document.getElementById("stable");
+    const betaCard = document.getElementById("beta");
+    if (stable) {
+      fill(stableCard, stable);
+    } else {
+      stableCard.querySelector('[data-field="version"]').textContent = "尚未發佈";
+      stableCard.querySelector("button.install").disabled = true;
+    }
+    if (beta && (!stable || isNewer(beta.version, stable.version))) {
+      fill(betaCard, beta);
+      betaCard.hidden = false;
+    }
+  })();
+</script>
+</body>
+</html>
