@@ -4,200 +4,296 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GT7 Dash 線上燒錄</title>
-<meta name="description" content="用瀏覽器透過 USB 安裝或更新 GT7 Dash 儀表韌體。">
+<meta name="description" content="GT7 Dash 線上燒錄韌體，設定會保留。">
+<meta name="color-scheme" content="dark light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet">
 <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
 <style>
+  /* Design tokens: dark telemetry first, light variant below. */
   :root {
-    --bg: #f5f6f8;
-    --card: #ffffff;
-    --text: #1b1f24;
-    --muted: #5d6673;
-    --line: #dde1e6;
-    --accent: #e8590c;
-    --accent-text: #ffffff;
-    --beta: #6741d9;
-    --warn-bg: #fff4e5;
-    --warn-line: #f0b46b;
-    --ok: #2b8a3e;
-    color-scheme: light;
+    --bg: #0d0f12;
+    --bg-grid: rgba(255, 255, 255, .035);
+    --surface: #15181d;
+    --surface-2: #1c2027;
+    --line: #2a3039;
+    --text: #eef1f5;
+    --muted: #9aa3af;
+    --stable: #ff6a1a;
+    --stable-ink: #140904;
+    --beta: #2dd4bf;
+    --beta-ink: #04130f;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --warn-bg: rgba(251, 191, 36, .1);
+    --screen: #050608;
+    --radius: 14px;
+    --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+    --body: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
   }
-  @media (prefers-color-scheme: dark) {
+  @media (prefers-color-scheme: light) {
     :root {
-      --bg: #111418;
-      --card: #1a1f25;
-      --text: #e9ecef;
-      --muted: #9aa4b1;
-      --line: #2c333b;
-      --accent: #ff7a2f;
-      --accent-text: #111418;
-      --beta: #9775fa;
-      --warn-bg: #2b2114;
-      --warn-line: #8a5a1c;
-      --ok: #51cf66;
-      color-scheme: dark;
+      --bg: #f4f5f7;
+      --bg-grid: rgba(15, 23, 42, .045);
+      --surface: #ffffff;
+      --surface-2: #f0f2f5;
+      --line: #dde1e7;
+      --text: #12161c;
+      --muted: #59626e;
+      --stable: #d9480f;
+      --stable-ink: #ffffff;
+      --beta: #0d9488;
+      --beta-ink: #ffffff;
+      --ok: #15803d;
+      --warn: #b45309;
+      --warn-bg: #fff7e6;
     }
   }
+
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
   body {
     margin: 0;
-    background: var(--bg);
+    background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 32px 32px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 32px 32px,
+      var(--bg);
     color: var(--text);
-    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
-    /* ESP Web Tools dialog colours */
-    --mdc-theme-primary: var(--accent);
+    font: 16px/1.7 var(--body);
+    -webkit-font-smoothing: antialiased;
+    /* ESP Web Tools dialog */
+    --mdc-theme-primary: var(--stable);
   }
-  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
-  h1 { font-size: 28px; line-height: 1.25; margin: 0 0 6px; }
-  h2 { font-size: 19px; margin: 36px 0 12px; }
-  p { margin: 0 0 12px; }
-  .lead { color: var(--muted); margin-bottom: 24px; }
-  .notice {
-    border: 1px solid var(--warn-line);
-    background: var(--warn-bg);
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin: 0 0 20px;
-  }
+  a { color: inherit; text-underline-offset: 3px; }
+  a:hover { color: var(--stable); }
+  :focus-visible { outline: 2px solid var(--stable); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+  /* Top bar */
+  header.bar { border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 5; }
+  header.bar .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 700 18px var(--display); letter-spacing: .04em; text-decoration: none; }
+  .brand svg { flex: none; }
+  .bar nav { display: flex; gap: 20px; font-size: 14px; color: var(--muted); }
+  .bar nav a { text-decoration: none; }
+  @media (max-width: 560px) { .bar nav { display: none; } }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; padding: 56px 0 40px; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; padding-top: 32px; gap: 28px; } }
+  .eyebrow { font: 600 13px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--stable); margin: 0 0 12px; }
+  h1 { font: 700 clamp(32px, 5vw, 48px)/1.15 var(--body); margin: 0 0 16px; letter-spacing: .01em; }
+  h1 .latin { font-family: var(--display); }
+  .lead { color: var(--muted); font-size: 17px; margin: 0 0 24px; max-width: 34em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); font-size: 14px; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .chip.ok .dot { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+  .chip.bad { border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+  .chip.bad .dot { background: var(--warn); }
+
+  /* Device mock */
+  .device { position: relative; border-radius: 22px; padding: 18px; background: linear-gradient(160deg, #2a2f37, #111418); box-shadow: 0 30px 60px -20px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08); }
+  .device svg { display: block; width: 100%; height: auto; border-radius: 8px; background: var(--screen); }
+  .led { animation: sweep 2.8s ease-in-out infinite; }
+  @keyframes sweep { 0%, 100% { opacity: .18; } 40%, 70% { opacity: 1; } }
+
+  /* Section headings */
+  section { padding: 40px 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+  h2 { font-size: 24px; margin: 0; }
+
+  /* Install cards */
+  .notice { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--warn); background: var(--warn-bg); color: var(--text); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; }
   .notice[hidden] { display: none; }
-  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+  .notice svg { flex: none; color: var(--warn); margin-top: 3px; }
+  .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card { --accent: var(--stable); --ink: var(--stable-ink); position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--accent); }
+  .card.beta { --accent: var(--beta); --ink: var(--beta-ink); }
   .card[hidden] { display: none; }
-  .tag {
-    align-self: flex-start;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 1px 10px;
-    border-radius: 99px;
-    color: var(--accent);
-    border: 1px solid currentColor;
-  }
-  .card.beta .tag { color: var(--beta); }
-  .version { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .meta { color: var(--muted); font-size: 14px; min-height: 1.6em; }
-  .card esp-web-install-button { margin-top: 8px; }
-  button.install {
-    width: 100%;
-    border: 0;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    background: var(--accent);
-    color: var(--accent-text);
-  }
-  .card.beta button.install { background: var(--beta); }
-  button.install:disabled { opacity: .5; cursor: default; }
-  .slot-msg { color: var(--muted); font-size: 14px; }
-  ol, ul { padding-left: 1.4em; margin: 0 0 12px; }
-  li { margin-bottom: 6px; }
-  code, kbd {
-    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-    font-size: .92em;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    padding: 0 5px;
-  }
-  details {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 10px 16px;
-    margin-bottom: 10px;
-  }
-  summary { cursor: pointer; font-weight: 600; }
-  details p, details ul { margin-top: 8px; }
-  footer { margin-top: 40px; color: var(--muted); font-size: 14px; }
-  a { color: var(--accent); }
+  .card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .tag { font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .tag b { font-family: var(--body); letter-spacing: .04em; margin-left: 6px; }
+  .keep { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; white-space: nowrap; }
+  .version { font: 700 40px/1.1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: .01em; margin: 6px 0 0; }
+  .meta { color: var(--muted); font-size: 14px; min-height: 1.7em; }
+  .card esp-web-install-button { margin-top: 10px; display: block; }
+  .install { width: 100%; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 10px; padding: 12px 18px; background: var(--accent); color: var(--ink); font: 600 16px var(--body); cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+  .install:hover { filter: brightness(1.08); }
+  .install:active { transform: translateY(1px); }
+  .install:disabled { opacity: .45; cursor: not-allowed; filter: none; }
+  .slot-msg { display: block; color: var(--muted); font-size: 14px; }
+
+  /* Stepper */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); counter-reset: step; }
+  .steps li { counter-increment: step; display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .steps li::before { content: counter(step); flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); font: 700 15px var(--display); color: var(--stable); }
+  .steps .warn-step { border-color: var(--warn); }
+  .steps .warn-step::before { color: var(--warn); }
+  code, kbd { font: .9em var(--mono); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; color: var(--text); }
+
+  /* FAQ */
+  .faq { display: grid; gap: 10px; }
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  summary { list-style: none; cursor: pointer; padding: 16px 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font: 600 20px var(--display); color: var(--muted); transition: transform .2s ease; }
+  details[open] summary::after { transform: rotate(45deg); }
+  .faq-body { padding: 0 18px 16px; color: var(--muted); }
+  .faq-body p { margin: 0; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 32px; padding: 24px 0 40px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 </style>
 </head>
 <body>
-<main>
-  <h1>GT7 Dash 線上燒錄</h1>
-  <p class="lead">用 USB 線把儀表接上電腦，直接在這個網頁安裝或更新韌體，不需要安裝 Arduino IDE。原本的 Wi-Fi 和各項設定都會保留。</p>
 
-  <div class="notice" id="no-serial" hidden>
-    這個瀏覽器不支援 USB 燒錄。請改用電腦版的 <b>Chrome</b>、<b>Edge</b> 或 <b>Opera</b>。Safari、Firefox 和手機都不能使用。
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="GT7 Dash">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="5" width="24" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15h3M10 13h3M15 11h3" stroke="#ff6a1a" stroke-width="2.4" stroke-linecap="round"/></svg>
+      GT7 DASH
+    </a>
+    <nav aria-label="頁面導覽">
+      <a href="#install">安裝</a>
+      <a href="#steps">步驟</a>
+      <a href="#faq">常見問題</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="wrap">
+  <div class="hero">
+    <div>
+      <p class="eyebrow">Web USB Flasher</p>
+      <h1>線上燒錄韌體</h1>
+      <p class="lead">接上 USB，約一分鐘完成，設定會保留。</p>
+      <ul class="chips" aria-live="polite">
+        <li class="chip" id="chip-browser"><span class="dot"></span><span>檢查中…</span></li>
+      </ul>
+    </div>
+    <div class="device" aria-hidden="true">
+      <svg viewBox="0 0 480 320" role="img">
+        <defs>
+          <linearGradient id="rpm" x1="0" x2="1">
+            <stop offset="0" stop-color="#22c55e"/><stop offset=".6" stop-color="#facc15"/><stop offset=".85" stop-color="#ff6a1a"/><stop offset="1" stop-color="#ef4444"/>
+          </linearGradient>
+        </defs>
+        <g>
+          <rect x="16" y="16" width="448" height="18" rx="4" fill="#15181d"/>
+          <rect x="16" y="16" width="360" height="18" rx="4" fill="url(#rpm)"/>
+          <g class="led" fill="#ef4444">
+            <circle cx="400" cy="25" r="6"/><circle cx="420" cy="25" r="6"/><circle cx="440" cy="25" r="6"/>
+          </g>
+        </g>
+        <text x="240" y="196" text-anchor="middle" font-family="Chakra Petch, sans-serif" font-weight="700" font-size="150" fill="#f5f7fa">4</text>
+        <text x="40" y="92" font-family="Chakra Petch, sans-serif" font-size="14" fill="#7c8592" letter-spacing="2">SPEED</text>
+        <text x="40" y="140" font-family="Chakra Petch, sans-serif" font-weight="700" font-size="48" fill="#f5f7fa">212</text>
+        <text x="40" y="160" font-family="Chakra Petch, sans-serif" font-size="13" fill="#7c8592">km/h</text>
+        <text x="440" y="92" text-anchor="end" font-family="Chakra Petch, sans-serif" font-size="14" fill="#7c8592" letter-spacing="2">RPM</text>
+        <text x="440" y="140" text-anchor="end" font-family="Chakra Petch, sans-serif" font-weight="700" font-size="40" fill="#f5f7fa">7420</text>
+        <line x1="16" y1="222" x2="464" y2="222" stroke="#232831"/>
+        <g font-family="Chakra Petch, sans-serif">
+          <text x="40" y="250" font-size="13" fill="#7c8592" letter-spacing="2">LAP</text>
+          <text x="40" y="284" font-size="28" font-weight="700" fill="#f5f7fa">3/5</text>
+          <text x="170" y="250" font-size="13" fill="#7c8592" letter-spacing="2">BEST</text>
+          <text x="170" y="284" font-size="28" font-weight="700" fill="#c084fc">1:42.318</text>
+          <text x="440" y="250" text-anchor="end" font-size="13" fill="#7c8592" letter-spacing="2">POS</text>
+          <text x="440" y="284" text-anchor="end" font-size="28" font-weight="700" fill="#f5f7fa">P2</text>
+        </g>
+        <rect x="16" y="296" width="210" height="8" rx="4" fill="#15181d"/><rect x="16" y="296" width="168" height="8" rx="4" fill="#22c55e"/>
+        <rect x="254" y="296" width="210" height="8" rx="4" fill="#15181d"/><rect x="254" y="296" width="40" height="8" rx="4" fill="#ef4444"/>
+      </svg>
+    </div>
   </div>
 
-  <div class="cards">
-    <section class="card" id="stable">
-      <span class="tag">穩定版</span>
-      <div class="version" data-field="version">讀取中…</div>
-      <div class="meta" data-field="meta"></div>
-      <esp-web-install-button manifest="stable/webflash.json">
-        <button class="install" slot="activate">安裝穩定版</button>
-        <span class="slot-msg" slot="unsupported">這個瀏覽器不支援，請用電腦版 Chrome 或 Edge。</span>
-        <span class="slot-msg" slot="not-allowed">網頁必須透過 https 開啟才能燒錄。</span>
-      </esp-web-install-button>
-    </section>
+  <section id="install" aria-labelledby="install-title">
+    <div class="sec-head"><h2 id="install-title">安裝</h2></div>
 
-    <section class="card beta" id="beta" hidden>
-      <span class="tag">測試版</span>
-      <div class="version" data-field="version"></div>
-      <div class="meta" data-field="meta"></div>
-      <esp-web-install-button manifest="beta/webflash.json">
-        <button class="install" slot="activate">安裝測試版</button>
-        <span class="slot-msg" slot="unsupported">這個瀏覽器不支援，請用電腦版 Chrome 或 Edge。</span>
-        <span class="slot-msg" slot="not-allowed">網頁必須透過 https 開啟才能燒錄。</span>
-      </esp-web-install-button>
-    </section>
-  </div>
+    <div class="notice" id="no-serial" role="alert" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+      <div>此瀏覽器不支援，請用電腦版 <b>Chrome</b> 或 <b>Edge</b>。</div>
+    </div>
 
-  <h2>安裝步驟</h2>
-  <ol>
-    <li>用可以傳資料的 USB 線把儀表接上電腦（只能充電的線不行）。</li>
-    <li>按上面的「安裝」，瀏覽器會列出序列埠。選 <code>USB JTAG/serial debug unit</code> 或 <code>USB-Enhanced-SERIAL CH343</code> 開頭的那一個，再按「連線」。</li>
-    <li>出現英文視窗後按 <b>Install GT7 Dash</b>。</li>
-    <li>接著會問 <b>Erase device</b>。<b>不要勾選</b>，直接按 <b>Next</b>，設定就會保留。</li>
-    <li>按 <b>Install</b> 開始燒錄，大約一分鐘。過程中不要拔線。</li>
-    <li>看到 <b>Installation complete!</b> 就完成了。如果儀表沒有自己重新開機，按一下板子上的 <kbd>RESET</kbd>。</li>
-  </ol>
-  <p>之後的更新可以直接在儀表選單的韌體頁面檢查更新，不一定要再接電腦。</p>
+    <div class="cards">
+      <article class="card" id="stable">
+        <div class="card-top"><span class="tag">Stable<b>穩定版</b></span><span class="keep">保留設定</span></div>
+        <p class="version" data-field="version">讀取中…</p>
+        <div class="meta" data-field="meta"></div>
+        <esp-web-install-button manifest="stable/webflash.json">
+          <button class="install" slot="activate">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            安裝
+          </button>
+          <span class="slot-msg" slot="unsupported">請用電腦版 Chrome 或 Edge</span>
+          <span class="slot-msg" slot="not-allowed">需以 https 開啟</span>
+        </esp-web-install-button>
+      </article>
 
-  <h2>常見問題</h2>
-  <details>
-    <summary>勾選 Erase device 會怎樣？</summary>
-    <p>整片記憶體會先清空，等於恢復成全新的狀態：</p>
-    <ul>
-      <li>Wi-Fi 設定、目標主機、儀表樣式等所有設定都會消失，開機後要重新用手機設定 Wi-Fi。</li>
-      <li>Wi-Fi 設定熱點的密碼會重新產生，之前拍下或印出來的 QR 碼就不能用了。</li>
-      <li>自訂的機器名稱也會清掉。</li>
-    </ul>
-    <p>只有在儀表怪怪的、重灌也沒用時才需要勾。</p>
-  </details>
-  <details>
-    <summary>列表裡找不到序列埠</summary>
-    <ul>
-      <li>換一條 USB 線，或換到板子上的另一個 USB 孔。</li>
-      <li>如果板子是接 CH343 那個孔，Windows 可能要先安裝 WCH 的 CH343 驅動程式。</li>
-      <li>關掉 Arduino IDE 的序列埠監控視窗或其他正在用這個序列埠的程式。</li>
-    </ul>
-  </details>
-  <details>
-    <summary>一直停在連線中，或出現 Failed to initialize</summary>
-    <p>手動讓板子進入燒錄模式：按住 <kbd>BOOT</kbd> 不放，按一下 <kbd>RESET</kbd>，再放開 <kbd>BOOT</kbd>。然後重新按「安裝」。燒完後要再按一次 <kbd>RESET</kbd> 才會開機。</p>
-  </details>
-  <details>
-    <summary>穩定版和測試版有什麼不同？</summary>
-    <p>測試版是還在試用的新功能，可能有問題。裝了測試版之後，儀表會從測試版頻道檢查更新；等下一個穩定版推出，就會自動回到穩定版。這裡只在測試版比穩定版新的時候才會出現測試版。</p>
-  </details>
-  <details>
-    <summary>從測試版改回穩定版</summary>
-    <p>直接在這裡按「安裝穩定版」即可，設定會保留。</p>
-  </details>
+      <article class="card beta" id="beta" hidden>
+        <div class="card-top"><span class="tag">Beta<b>測試版</b></span><span class="keep">保留設定</span></div>
+        <p class="version" data-field="version"></p>
+        <div class="meta" data-field="meta"></div>
+        <esp-web-install-button manifest="beta/webflash.json">
+          <button class="install" slot="activate">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            安裝
+          </button>
+          <span class="slot-msg" slot="unsupported">請用電腦版 Chrome 或 Edge</span>
+          <span class="slot-msg" slot="not-allowed">需以 https 開啟</span>
+        </esp-web-install-button>
+      </article>
+    </div>
+  </section>
 
-  <footer>燒錄工具使用 <a href="https://esphome.github.io/esp-web-tools/" rel="noopener">ESP Web Tools</a>。韌體版本記錄請看 <a href="https://github.com/AndyChen0215/GT7-Data-firmware/releases" rel="noopener">GitHub Releases</a>。</footer>
+  <section id="steps" aria-labelledby="steps-title">
+    <div class="sec-head"><h2 id="steps-title">步驟</h2></div>
+    <ol class="steps">
+      <li><span>用 USB 傳輸線接上電腦</span></li>
+      <li><span>按「安裝」，選擇序列埠後連線</span></li>
+      <li><span>按 <b>Install GT7 Dash</b></span></li>
+      <li class="warn-step"><span><b>Erase device</b> 不要勾，按 <b>Next</b></span></li>
+      <li><span>按 <b>Install</b>，等約一分鐘</span></li>
+      <li><span>完成。沒有自動重開就按 <kbd>RESET</kbd></span></li>
+    </ol>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-title">
+    <div class="sec-head"><h2 id="faq-title">常見問題</h2></div>
+    <div class="faq">
+      <details>
+        <summary>勾了 Erase device 會怎樣？</summary>
+        <div class="faq-body"><p>所有設定都會清除，包含 Wi-Fi、機器名稱和設定熱點的密碼。</p></div>
+      </details>
+      <details>
+        <summary>找不到序列埠</summary>
+        <div class="faq-body"><p>選 <code>USB JTAG/serial</code> 或 <code>CH343</code>。沒有的話換線、換 USB 孔，或安裝 CH343 驅動程式。</p></div>
+      </details>
+      <details>
+        <summary>連不上</summary>
+        <div class="faq-body"><p>按住 <kbd>BOOT</kbd>，按一下 <kbd>RESET</kbd>，放開 <kbd>BOOT</kbd>，再按「安裝」。燒完後按 <kbd>RESET</kbd>。</p></div>
+      </details>
+      <details>
+        <summary>測試版是什麼？</summary>
+        <div class="faq-body"><p>試用中的新功能。隨時可以重裝穩定版，設定會保留。</p></div>
+      </details>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/AndyChen0215/GT7-Data-firmware/releases" rel="noopener">版本紀錄</a>
+    <a href="https://esphome.github.io/esp-web-tools/" rel="noopener">ESP Web Tools</a>
+  </div>
+</footer>
 
 <script>
   // Same order as OtaUpdater::isNewer and the release workflow.
@@ -233,11 +329,16 @@
 
   function fill(card, info) {
     card.querySelector('[data-field="version"]').textContent = "v" + info.version;
-    const meta = [info.date, info.notes].filter(Boolean).join(" · ");
-    card.querySelector('[data-field="meta"]').textContent = meta;
+    card.querySelector('[data-field="meta"]').textContent = [info.date, info.notes].filter(Boolean).join(" · ");
   }
 
-  if (!("serial" in navigator)) {
+  const chip = document.getElementById("chip-browser");
+  if ("serial" in navigator) {
+    chip.classList.add("ok");
+    chip.lastElementChild.textContent = "瀏覽器可用";
+  } else {
+    chip.classList.add("bad");
+    chip.lastElementChild.textContent = "請用 Chrome 或 Edge";
     document.getElementById("no-serial").hidden = false;
   }
 
